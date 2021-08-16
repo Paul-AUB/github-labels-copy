@@ -6,7 +6,7 @@ This allow you to copy and/or update labels from a source repository
 to another.
 
 Usage:
-  github-labels-copy [--login=<login> | --token=<token>] [-crm]
+  github-labels-copy [--login=<login> | --token=<token>] [--base-url=<base-url>] [-crm] 
                      (--load=<file> | SOURCE) (--dump | DESTINATION)
   github-labels-copy (-h | --help)
   github-labels-copy --version
@@ -22,6 +22,7 @@ Options:
   --login=LOGIN     Github login, you will be prompted for password.
   --load=FILE       Load labels from a previous dump.
   --dump            Dump labels into a yaml file.
+  --base-url=URL    Specify a base URL for GitHub Enterprise usage. Must be of form: `https://<your_company>/api/v3`.
   -c                Create labels that are in source but not in destination
                     repository.
   -r                Remove labels that are in destination but not in source
@@ -31,14 +32,15 @@ Options:
 
 """
 
-from os import getenv
-from docopt import docopt
-from .labels import Labels
-
 # to catch connection error
 import socket
-from github.GithubException import (UnknownObjectException, TwoFactorException,
-                                    BadCredentialsException)
+from os import getenv
+
+from docopt import docopt
+from github.GithubException import (BadCredentialsException,
+                                    TwoFactorException, UnknownObjectException)
+
+from .labels import Labels
 
 __version__ = '1.1.1'
 
@@ -52,13 +54,22 @@ class NoCredentialException(Exception):
 def label_copy():
     args = docopt(__doc__)
     if args['--login']:
-        labels = Labels(login=args['--login'])
+        if args['--base-url']:
+            labels = Labels(login=args['--login'], base_url=args['--base-url'])
+        else:
+            labels = Labels(login=args['--login'])
     elif args['--token']:
-        labels = Labels(token=args['--token'])
+        if args['--base-url']:
+            labels = Labels(token=args['--token'], base_url=args['--base-url'])
+        else:
+            labels = Labels(token=args['--token'])
     else:
         token = getenv('GITHUB_API_TOKEN')
         if token:
-            labels = Labels(token=token)
+            if args['--base-url']:
+                labels = Labels(token=token, base_url=args['--base-url'])
+            else:
+                labels = Labels(token=token)
         else:
             raise NoCredentialException()
 

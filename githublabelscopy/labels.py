@@ -1,23 +1,33 @@
-from github import Github
 from getpass import getpass
+
 import yaml
+from github import Github
 
 
 class Labels(object):
-    def __init__(self, token=None, login=None):
+    def __init__(self, token=None, login=None, base_url=None):
         self.src_labels = dict()
         self.dst_labels = dict()
-        self._identify(token, login)
+        self._identify(token, login, base_url)
         self._dumpMode = False
         self._labels = dict()
 
-    def _identify(self, token=None, login=None):
+    def _identify(self, token=None, login=None, base_url=None):
         if token:
-            self.github = Github(token)
+            if base_url:
+                self.github = Github(token, base_url=base_url)
+            else:
+                self.github = Github(token)
         elif login:
-            self.github = Github(login, getpass())
+            if base_url:
+                self.github = Github(login, getpass(), base_url=base_url)
+            else:
+                self.github = Github(login, getpass())
         else:
-            self.github = Github()
+            if base_url:
+                self.github = Github(base_url=base_url)
+            else:
+                self.github = Github()
 
     def setSrcRepo(self, repository):
         self.src_repo = self.github.get_repo(repository)
